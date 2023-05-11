@@ -1,0 +1,33 @@
+{
+  "name": "data-scrapping",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@emotion/cache": "latest",
+    "@emotion/react": "latest",
+    "@emotion/server": "latest",
+    "@emotion/styled": "latest",
+    "@mui/icons-material": "latest",
+    "@mui/material": "latest",
+    "@types/js-cookie": "^3.0.3",
+    "@types/uuid": "^9.0.1",
+    "js-cookie": "^3.0.5",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "eslint": "latest",
+    "eslint-config-next": "latest",
+    "typescript": "latest"
+  }
+}

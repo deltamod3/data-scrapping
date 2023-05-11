@@ -1,0 +1,110 @@
+service: data-scrapping-service
+frameworkVersion: '3'
+
+plugins:
+  - serverless-offline
+
+provider:
+  name: aws
+  runtime: nodejs16.x
+  stage: dev
+  region: eu-north-1
+
+package:
+  exclude:
+    - node_modules/**
+    - package.json
+    - 'package-lock.json'
+    - README.md
+
+custom:
+  stage: ${opt:stage, self:provider.stage}
+
+layers:
+  ExternalDepsModule:
+    path: externalDepsLayer
+    description: "External Dependencies Layer"
+    compatibleRuntimes:
+      - nodejs16.x
+
+functions:
+  SearchFunction:
+    handler: src/search.handler
+    timeout: 30
+    role: LambdaFunctionRole
+    layers:
+      - {Ref: ExternalDepsModuleLambdaLayer}
+    environment:
+      HISTORY_TABLE_NAME: 
+        Ref: HistoryTable
+    events:
+      - http:
+          method: get
+          path: /search
+          cors: true
+
+  HistoryFunction:
+    handler: src/history.handler
+    timeout: 6
+    role: LambdaFunctionRole
+    layers:
+      - {Ref: ExternalDepsModuleLambdaLayer}
+    environment:
+      HISTORY_TABLE_NAME: 
+        Ref: HistoryTable
+    events:
+      - http:
+          method: get
+          path: /history
+          cors: true
+
+resources:
+  Resources:
+    HistoryTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: HistoryTable
+        AttributeDefinitions:
+          - AttributeName: sessionId
+            AttributeType: S
+          - AttributeName: createdAt
+            AttributeType: S
+          - AttributeName: searchKey
+            AttributeType: S
+        KeySchema:
+          - AttributeName: sessionId
+            KeyType: HASH
+          - AttributeName: createdAt
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: sessionId-searchKey-index
+            KeySchema:
+              - AttributeName: sessionId
+                KeyType: HASH
+              - AttributeName: searchKey
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+    LambdaFunctionRole:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        RoleName: ${self:custom.stage}-sqs-full-access-role
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action: sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
